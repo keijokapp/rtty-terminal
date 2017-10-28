@@ -1,0 +1,16 @@
+{
+	"name": "rtty-decoder-js",
+	"version": "0.0.1",
+	"description": "RTTY decoder based on navigator.getUserMedia and FFT implementation by Nick Jones (https://github.com/dntj/jsfft)",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/keijokapp/rtty-decoder-js"
+	},
+	"dependencies": {
+		"express": "latest",
+		"morgan": "latest",
+		"express-babelify-middleware": "latest",
+		"babel-plugin-transform-es2015-modules-commonjs": "latest",
+		"babel-plugin-syntax-async-functions": "latest"
+	}
+}

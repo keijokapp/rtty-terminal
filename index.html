@@ -1,0 +1,50 @@
+<!DOCTYPE html5>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>RTTY decoder</title>
+	<style>
+html, div, body {
+	padding: 0;
+	border: 0;
+	margin: 0;
+}
+body {
+  font-family: sans-serif;
+}
+
+canvas {
+  background-color: #eee;
+}
+
+canvas {
+	display: inline-block;
+}
+	</style>
+</head>
+<body>
+	<div class="canvasContainer">
+		<canvas id="input" class="full-width"></canvas>
+	</div>
+	<div class="canvasContainer" style="position: relative; overflow: hidden; height: 128px">
+		<canvas id="waterfall1" class="full-width" style="position: absolute; left: 0"></canvas>
+		<canvas id="waterfall2" class="full-width" style="position: absolute; left: 0	"></canvas>
+	</div>
+	<div class="canvasContainer">
+		<canvas id="fsk-input" class="full-width"></canvas>
+	</div>
+
+	<div>
+		<form id="conf">
+			cFrq: <input type="number" id="cfrq" style="width: 60px" value="2125" /> shift: <input type="number" id="shift" style="width: 60px" value="170" /> 
+		</form>
+	</div>
+	<div>
+		<textarea id="result" rows="13"></textarea>
+	</div>
+	<div>
+<textarea id="message"></textarea>
+	</div>
+	<script type="text/javascript" src="app.js"></script>
+</body>
+</html>
