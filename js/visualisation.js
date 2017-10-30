@@ -15,7 +15,6 @@ analyser.smoothingTimeConstant = 0;
 
 function update() {
 	analyser.fftSize = config.fftSize;
-	
 	samplesArray = new Float32Array(config.fftSize);
 	fftArray = new Uint8Array(config.fftSize / 2);
 
@@ -68,9 +67,18 @@ function draw() {
 		const value = (fftArray[Math.round(i)] - min) * coefficient;
 		waterfallImageData.data[4 * x + 0] = value;
 		waterfallImageData.data[4 * x + 1] = value;
-		waterfallImageData.data[4 * x + 2] = value	;
+		waterfallImageData.data[4 * x + 2] = value;
 		waterfallImageData.data[4 * x + 3] = 255;
 	}
+
+	const markFrequencyBin = (config.afskFrq - config.afskShift / 2) / audioCtx.sampleRate * config.fftSize;
+	const spaceFrequencyBin = (config.afskFrq + config.afskShift / 2) / audioCtx.sampleRate * config.fftSize;
+	const markx = Math.round(markFrequencyBin / fftToWaterfallRatio);
+	waterfallImageData.data[4 * markx] = 255;
+	waterfallImageData.data[4 * markx + 1] = waterfallImageData[4 * markx + 2] = 0;
+	const spacex = Math.round(spaceFrequencyBin / fftToWaterfallRatio);
+	waterfallImageData.data[4 * spacex] = 255;
+	waterfallImageData.data[4 * spacex + 1] = waterfallImageData[4 * spacex + 2] = 0;
 	
 	const y = parseInt(config.waterfallHeight - (pixelOffset % config.waterfallHeight));
 	ctx.putImageData(waterfallImageData, 0, y);

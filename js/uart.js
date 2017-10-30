@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import audioCtx from './audioContext';
 
 // encoder
 
@@ -8,10 +9,10 @@ export class UARTTransmitter {
 	 * @constructor
 	 * @param keyer {Keyer} Keyer to be used for transmitting
 	 * @param options {object} Options
-   * @param options.byteSize {number} Number of bits in byte
-   * @param options.bitSize {number} Length of bit in keyers time scale
-   * @param options.parityBits {number} Number of parity bits
-   * @param options.stopBits {number} Number of stop bits
+	 * @param options.byteSize {number} Number of bits in byte
+	 * @param options.bitSize {number} Length of bit in keyers time scale
+	 * @param options.parityBits {number} Number of parity bits
+	 * @param options.stopBits {number} Number of stop bits
 	 */
 	constructor(keyer, options) {
 		this._keyer = keyer;
@@ -64,7 +65,7 @@ export class UARTTransmitter {
 			time += this._bitSize;
 			parity >>= 1;
 		}
-		
+
 		bits.push({ timestamp: time, value: 1 }); // stop bits
 
 		bits.push({ timestamp: time + this._stopBits * this._bitSize, value: 0 });
@@ -91,10 +92,10 @@ export class UARTReceiver extends EventEmitter {
 	 * @constructor
 	 * @param dekeyer {Dekeyer} Dekeyer used for receiving
 	 * @param options {object} Options
-   * @param options.byteSize {number} Number of bits in byte
-   * @param options.bitSize {number} Length of bit in keyers time scale
-   * @param options.parityBits {number} Number of parity bits
-   * @param options.stopBits {number} Number of stop bits
+	 * @param options.byteSize {number} Number of bits in byte
+	 * @param options.bitSize {number} Length of bit in keyers time scale
+	 * @param options.parityBits {number} Number of parity bits
+	 * @param options.stopBits {number} Number of stop bits
 	 */
 	constructor(dekeyer, options) {
 		super();
@@ -105,14 +106,17 @@ export class UARTReceiver extends EventEmitter {
 		this._parityBits = options.parityBits;
 		this._stopBits = options.stopBits;
 
-		if(dekeyer.currentValue !== -1) {
+		this._dekeyer.on('change', this._change.bind(this));
+
+		this._reset();
+	}
+
+	_reset() {
+		if(this._dekeyer.currentValue !== 1) {
 			this._state = States.WAIT_HIGH;
 		} else {
 			this._state = States.WAIT_START;
-		}
-
-		this._dekeyer.on('change', this._change.bind(this));
-
+		}	
 	}
 
 	_change(value, time, timeStamp) {
@@ -120,7 +124,7 @@ export class UARTReceiver extends EventEmitter {
 		changes.push({
 			value, time: timeStamp, sample: time
 		});
-		
+
 		switch(this._state) {
 		case States.DECODING:
 			break;
@@ -133,66 +137,120 @@ export class UARTReceiver extends EventEmitter {
 			if(value === -1) { // Got start bit
 				this._state = States.DECODING;
 				this._byteStart = time;
-				this._decode();
-			} else if(value !== 1) {
-				console.log('Reverted to waiting high value')
-				this._state = States.WAIT_HIGH;
+				this._decode().then(byte => {
+					console.log('Got byte: %d', byte);
+					this._reset();
+				}).catch(e => {
+					console.log('Failed to decode: %s', e.message);
+					this._reset();
+				});
+			} else {
+				this._reset();
 			}
 			break;
 		}
 	}
 
-	_decode(bitIndex) {
+	async _decode(bitIndex) {
 
 		const ctrlMask = (((1 << this._stopBits) - 1) << (this._byteSize + this._parityBits + 1)) | 1; // mask for start and stop bits
 		const maxParity = (1 << this._parityBits) - 1; // max parity value
 		const parityMask = maxParity << (this._byteSize + 1); // mask for parity bits
 
 		const bitCount = this._byteSize + 1 + this._parityBits + this._stopBits;
-		var error = false;
-		var byteValue = 0;
-		var bitIndex = 0;
-		var parity = 0;
 
-		const callback = value => {
-			if(error) {
-				return;
-			}
-			if(value === 0) {
-				error = true;
-				console.log('ERROR: Got zero value');
-				return;
-			}
-
-			value = value === 1 ? 1 : 0;
-			if(value && bitIndex > 0 && bitIndex <= this._byteSize) parity++;
-
-			byteValue |= value << bitIndex++;
-
-			if(bitIndex >= bitCount) {
-				if((byteValue & ctrlMask) === ctrlMask - 1) {
-					console.log('Start and stop bits OK');
+		// read start bit
+		await new Promise((resolve, reject) => {
+			const sampleOffset = Math.round(this._byteStart + this._bitSize / 2);
+			samplings.push({sample: sampleOffset});
+			this._dekeyer.once('' + sampleOffset, value => {
+				if(value === -1) {
+					resolve();
 				} else {
-					console.log('Start and stop bits NOT OK');
+					reject(new Error('Invalid start bit'));
 				}
-				if((byteValue & parityMask) >> (this._byteSize + 1) === (parity & maxParity)) {
-					console.log('Parity bits OK');
-				} else {
-					console.log('Parity bits NOT OK: parity bit: %d; byte parity: %d', (byteValue & parityMask) >> (this._byteSize + 1), parity);
-				}
-				byteValue >>= 1;
-				byteValue &= (1 << this._byteSize) - 1;
+			})
+		});
 
-				console.log('Got byte: %s', byteValue);
-				this._state = this._dekeyer.currentValue !== 1 ? States.WAIT_HIGH : States.WAIT_START;
+		// read data bits
+		const data = await new Promise((resolve, reject) => {
+
+			var byte = 0;
+			var parity = 0;
+			var bitIndex = 0;
+
+			const callback = value => {
+				if(value === 0) {
+					reject(new Error('Zero value'));
+					return;
+				}
+
+				value = value === 1 ? 1 : 0;
+				if(value) {
+					parity++;
+				}
+
+				byte |= value << bitIndex++;
+
+				if(bitIndex >= this._byteSize) {
+					resolve({ byte, parity });
+				}
+			};
+
+			for(let i = 1; i <= this._byteSize; i++) {
+				const sampleOffset = Math.round(this._byteStart + (i + .5) * this._bitSize);
+				samplings.push({sample: sampleOffset});
+				this._dekeyer.once('' + sampleOffset, callback);
+			}
+		});
+
+		// read & check parity
+		if(this._parityBits) {
+			const parity = await new Promise((resolve, reject) => {
+
+				var parity = 0;
+				var bitIndex = 0;
+
+				const callback = value => {
+					if(value === 0) {
+						reject(new Error('Zero value'));
+						return;
+					}
+
+					value = value === 1 ? 1 : 0;
+					parity |= value << bitIndex++;
+
+					if(bitIndex >= this._parityBits) {
+						resolve(parity);
+					}
+				};
+
+				for(let i = this._byteSize + 1; i <= this._byteSize + this._parityBits; i++) {
+					const sampleOffset = Math.round(this._byteStart + (i + .5) * this._bitSize);
+					samplings.push({sample: sampleOffset});
+					this._dekeyer.once('' + sampleOffset, callback);
+				}
+			});
+			
+			if(parity !== data.parity) {
+				throw new Error('Invalid parity');
 			}
 		}
 
-		for(let i = 0; i < bitCount; i++) {
-			const sampleOffset = this._byteStart + i * this._bitSize + this._bitSize / 2;
-			samplings.push({ sample: sampleOffset });
-			this._dekeyer.once('' + sampleOffset, callback);
-		}
+		// read stop bits
+		await new Promise((resolve, reject) => {
+			const sampleOffset = Math.round(this._byteStart + (1 + this._byteSize + this._parityBits + this._stopBits / 2) * this._bitSize);
+			samplings.push({sample: sampleOffset});
+			this._dekeyer.once('' + sampleOffset, value => {
+				if(value === 1) {
+					resolve();
+				} else {
+					reject(new Error('Invalid stop bits'));
+				}
+			});
+		});
+		
+		return data.byte;
 	}
 }
 
@@ -212,15 +270,15 @@ function draw() {
 	const e = document.getElementById('fsk-input');
 	const ctx = e.getContext('2d');
 	ctx.strokeStyle = 'blue';
-	
+
 	while(changes[1] && changes[1].time < time - period) {
 		changes.shift();
 	}
-	
+
 	var changeIndex = 0;
 	var currentValue = 0;
 	var nextChange = changes[changeIndex];
-	
+
 	ctx.clearRect(0, 0, e.width, e.height);
 
 	ctx.beginPath();
@@ -232,11 +290,11 @@ function draw() {
 		}
 		if(currentValue) {
 			ctx.moveTo(i, e.height / 2);
-			ctx.lineTo(i, currentValue > 0 ? 0 : e.height);
+			ctx.lineTo(i, currentValue < 0 ? e.height : 0);
 		}
 	}
 	ctx.stroke();
-	
+
 	if(changes[0]) {
 		const referenceSample = changes[0].sample;
 		const referenceTime = changes[0].time;
@@ -246,11 +304,11 @@ function draw() {
 		const totalSamples = period * audioCtx.sampleRate / 1000;
 
 		ctx.strokeStyle = 'red';
-		ctx.beginPath();		
+		ctx.beginPath();
 		for(const sampling of samplings) {
 			const x = e.width * (sampling.sample - firstSample) / totalSamples;
-			ctx.moveTo(x, 0);	
-			ctx.lineTo(x, e.height);		
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, e.height);
 		}
 		ctx.stroke();
 
