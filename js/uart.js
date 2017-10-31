@@ -68,7 +68,7 @@ export class UARTTransmitter {
 
 		bits.push({ timestamp: time, value: 1 }); // stop bits
 
-		bits.push({ timestamp: time + this._stopBits * this._bitSize, value: 0 });
+		bits.push({ timestamp: time + this._stopBits * this._bitSize, value: 1 }); // ensure queue pointer is at the end of word
 
 		return this._keyer.queue(bits);
 	}
