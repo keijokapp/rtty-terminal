@@ -4,21 +4,24 @@ import audioCtx from './audioContext';
 
 // encoder
 
-// class AFSKKeyer implementes Keyer
 export class AFSKKeyer {
 
 	constructor() {
+
+		this.output = audioCtx.createChannelMerger(2);
 
 		this._oscillator = audioCtx.createOscillator();
 		this._oscillator.frequency.value = 0;
 		this._oscillator.start();
 
+		this._gain = audioCtx.createGain();
+		this._gain.gain.value = 0;
+		this._oscillator.connect(this._gain).connect(this.output);
+
 		this.currentValue = 0;
 		this._queueEnd = 0;
 
 		// Noise generator
-		this.output = audioCtx.createChannelMerger(2);
-
 		const noise = audioCtx.createScriptProcessor(null, 1, 1);
 		noise.onaudioprocess = function(e) {
 			const outputData = e.outputBuffer.getChannelData(0);
@@ -30,9 +33,6 @@ export class AFSKKeyer {
 		};
 //		noise.connect(this.output);
 
-		const gain = audioCtx.createGain();
-		gain.gain.value = 1;
-		this._oscillator.connect(gain).connect(this.output);
 
 		events.on('afskOutput', this._toggleAudioOutput.bind(this));
 		this._toggleAudioOutput();
@@ -67,7 +67,12 @@ export class AFSKKeyer {
 	}
 
 	_setFrequencyAtTime(frequency, time) {
-		this._oscillator.frequency.setValueAtTime(frequency, time);
+		if(frequency) {
+			this._oscillator.frequency.setValueAtTime(frequency, time);
+			this._gain.gain.value = 1;
+		} else {
+			this._gain.gain.value = 0;
+		}
 	}
 
 	setValueAtTime(value, time) {
