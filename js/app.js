@@ -3,6 +3,7 @@ import config, { events } from './state';
 import { AFSKKeyer, AFSKDekeyer } from './afsk';
 import { UARTTransmitter, UARTReceiver } from './uart';
 import { analyser } from './visualisation';
+import './prototyping';
 
 // Microphone input node
 var source;

@@ -79,12 +79,12 @@ function draw() {
 	const spacex = Math.round(spaceFrequencyBin / fftToWaterfallRatio);
 	waterfallImageData.data[4 * spacex] = 255;
 	waterfallImageData.data[4 * spacex + 1] = waterfallImageData[4 * spacex + 2] = 0;
-	
+
 	const y = parseInt(config.waterfallHeight - (pixelOffset % config.waterfallHeight));
 	ctx.putImageData(waterfallImageData, 0, y);
 	ctx.putImageData(waterfallImageData, 0, y + 1);
 	ctx.putImageData(waterfallImageData, 0, y + 2);
-	
+
 	activeWaterfall.style.top = (pixelOffset % config.waterfallHeight) - config.waterfallHeight;
 	inactiveWaterfall.style.top = pixelOffset % config.waterfallHeight;
 }

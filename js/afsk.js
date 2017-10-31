@@ -185,11 +185,11 @@ function lowpassFilter(f) {
 	y0 = y1 = 0;
 
 	return sample => {
-		x2 = x1; x1 = x0; 
+		x2 = x1; x1 = x0;
 		x0 = sample;
 		y2 = y1; y1 = y0;
 		y0 = x2 + 2 * x1 + x0
-       + d2 * y2 + d1 * y1;
+	           + d2 * y2 + d1 * y1;
 		return y0;
 	}
 }
