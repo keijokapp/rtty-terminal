@@ -1,22 +1,48 @@
 import audioCtx from './audioContext';
 import { analyser } from './visualisation';
-import { FFT } from 'jsfft';
+import { FFT, InvFFT } from 'jsfft';
 
+
+const canvasInput = document.getElementById('proto-input');
+const canvasInputFft = document.getElementById('proto-input-fft');
+const canvasPhase = document.getElementById('proto-phase');
+const canvasDerivedInput = document.getElementById('proto-derived-input');
 
 const processor = audioCtx.createScriptProcessor(512, 1, 1);
 const dummyDestination = audioCtx.createMediaStreamDestination();
 processor.connect(dummyDestination);
 
-
+var a = false;
 processor.onaudioprocess = function(e) {
 
 	const input = e.inputBuffer.getChannelData(0);
 
-	input.map(s => s * 1000);
+	for(let i = 0; i < input.length; i++) input[i] *= 50;
 
 	const fft = FFT(input);
 
-	drawSignal(document.getElementById('proto-input'), input, fft.real);
+	clearCanvas(canvasInput, canvasInputFft, canvasPhase, canvasDerivedInput);
+	drawCanvas(canvasInput, 'blue', input);
+	drawCanvas(canvasInputFft, 'red', fft.imag);
+	drawCanvas(canvasInputFft, 'blue', fft.real);
+
+	const phase = new Float32Array(input.length);
+	for(let i = 0; i < input.length; i++) {
+		phase[i] = Math.atan2(fft.imag[i], fft.real[i]) / Math.PI;
+	}
+	drawCanvas(canvasPhase, 'blue', phase);
+
+	const derived = InvFFT(fft);
+
+	drawCanvas(canvasDerivedInput, 'red', fft.imag);
+	drawCanvas(canvasDerivedInput, 'blue', fft.real);
+
+	for(let i = 0; i < 3; i++) {
+		const orig = input[i].toFixed(6);
+		const deri = derived.real[i].toFixed(6);
+		if(orig !== deri) console.log(orig, deri);
+	}
+
 }
 
 
@@ -57,4 +83,30 @@ function drawSignal(canvas, signal, fft) {
 	}
 	ctx.stroke();
 
+}
+
+function clearCanvas() {
+	for(const canvas of arguments) {
+		const ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+	}
+}
+
+function drawCanvas(canvas, style, data) {
+
+	const W = canvas.width;
+	const H = canvas.height;
+	const H2 = H / 2;
+
+	const xCoeff = W / data.length;
+
+	const ctx = canvas.getContext('2d');
+	ctx.strokeStyle = style;
+	ctx.beginPath();
+	ctx.moveTo(0, H2);
+	for(let i = 0; i < data.length; i++) {
+		const x = i * xCoeff;
+		ctx.lineTo(x, H2 - (data[i] * H2));
+	}
+	ctx.stroke();
 }
