@@ -7,6 +7,8 @@ const canvasInput = document.getElementById('proto-input');
 const canvasInputFft = document.getElementById('proto-input-fft');
 const canvasPhase = document.getElementById('proto-phase');
 const canvasDerivedInput = document.getElementById('proto-derived-input');
+const canvasHilbertFft = document.getElementById('proto-hilbert-fft');
+const canvasHilbert = document.getElementById('proto-hilbert');
 
 const processor = audioCtx.createScriptProcessor(512, 1, 1);
 const dummyDestination = audioCtx.createMediaStreamDestination();
@@ -17,11 +19,11 @@ processor.onaudioprocess = function(e) {
 
 	const input = e.inputBuffer.getChannelData(0);
 
-	for(let i = 0; i < input.length; i++) input[i] *= 50;
+	for(let i = 0; i < input.length; i++) input[i] *= 10;
 
 	const fft = FFT(input);
 
-	clearCanvas(canvasInput, canvasInputFft, canvasPhase, canvasDerivedInput);
+	clearCanvas(canvasInput, canvasInputFft, canvasPhase, canvasDerivedInput, canvasHilbertFft, canvasHilbert);
 	drawCanvas(canvasInput, 'blue', input);
 	drawCanvas(canvasInputFft, 'red', fft.imag);
 	drawCanvas(canvasInputFft, 'blue', fft.real);
@@ -37,17 +39,41 @@ processor.onaudioprocess = function(e) {
 	drawCanvas(canvasDerivedInput, 'red', fft.imag);
 	drawCanvas(canvasDerivedInput, 'blue', fft.real);
 
-	for(let i = 0; i < 3; i++) {
-		const orig = input[i].toFixed(6);
-		const deri = derived.real[i].toFixed(6);
-		if(orig !== deri) console.log(orig, deri);
-	}
+	const h = hilbert(input);
+	drawCanvas(canvasHilbert, 'red', h.imag);
+	drawCanvas(canvasHilbert, 'blue', h.real);
+
+	drawCanvas(canvasHilbert, 'red', h.imag);
+	drawCanvas(canvasHilbert, 'blue', h.real);
 
 }
 
 
 analyser.connect(processor);
 
+
+function hilbert(data) {
+
+	const fft = FFT(data);
+
+	const N = data.length;
+	const N2 = N / 2;
+
+	for(let i = 1; i < N2 - 1; i++) {
+		fft.real[i] *= 2;
+		fft.imag[i] *= 2;
+	}
+	
+	for(let i = N2 + 1; i < N; i++) {
+		fft.real[i] = 0;
+		fft.imag[i] = 0;
+	}
+
+	drawCanvas(canvasHilbertFft, 'red', fft.imag);
+	drawCanvas(canvasHilbertFft, 'blue', fft.real);
+
+	return InvFFT(fft);
+}
 
 
 // Drawing
