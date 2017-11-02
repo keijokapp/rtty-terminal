@@ -30,6 +30,11 @@ function resize() {
 		canvas.height = 128;
 	}
 
+	for(const canvas of document.querySelectorAll('.canvasContainer > canvas.half-width')) {
+		canvas.width = WIDTH / 2 - 2;
+		canvas.height = 128;
+	}
+
 	events.emit('waterfallWidth', WIDTH);
 }
 

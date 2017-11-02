@@ -40,10 +40,12 @@ canvas {
 		<canvas id="proto-input-fft" class="full-width"></canvas>
 	</div>
 	<div class="canvasContainer">
-		<canvas id="proto-phase" class="full-width"></canvas>
+		<canvas id="proto-mark" class="half-width"></canvas>
+		<canvas id="proto-space" class="half-width"></canvas>
 	</div>
 	<div class="canvasContainer">
-		<canvas id="proto-derived-input" class="full-width"></canvas>
+		<canvas id="proto-mark-fft" class="half-width"></canvas>
+		<canvas id="proto-space-fft" class="half-width"></canvas>
 	</div>
 	<div class="canvasContainer">
 		<canvas id="proto-hilbert-fft" class="full-width"></canvas>
@@ -51,7 +53,7 @@ canvas {
 	<div class="canvasContainer">
 		<canvas id="proto-hilbert" class="full-width"></canvas>
 	</div>
-	<div>
+	<div style="display:none">
 		<form id="conf">
 			cFrq: <input type="number" id="cfrq" style="width: 60px" value="2125" /> shift: <input type="number" id="shift" style="width: 60px" value="170" /> 
 		</form>

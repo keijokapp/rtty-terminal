@@ -11,7 +11,6 @@ export class AFSKKeyer {
 		this.output = audioCtx.createChannelMerger(2);
 
 		this._oscillator = audioCtx.createOscillator();
-		this._oscillator.frequency.value = 0;
 		this._oscillator.start();
 
 		this._gain = audioCtx.createGain();
@@ -46,7 +45,7 @@ export class AFSKKeyer {
 				this.output.disconnect(audioCtx.destination);
 			}
 		} catch(e) {
-			// intentionally ignored
+			console.error(e);
 		}
 	}
 
@@ -69,9 +68,9 @@ export class AFSKKeyer {
 	_setFrequencyAtTime(frequency, time) {
 		if(frequency) {
 			this._oscillator.frequency.setValueAtTime(frequency, time);
-			this._gain.gain.value = 1;
+			this._gain.gain.setValueAtTime(1, time);
 		} else {
-			this._gain.gain.value = 0;
+			this._gain.gain.setValueAtTime(0, time);
 		}
 	}
 
@@ -79,13 +78,20 @@ export class AFSKKeyer {
 		if(!Number.isFinite(time)) {
 			time = 0;
 		}
-		var frequency = 0;
-		this.currentValue = 0;
+
 		switch(value) {
-		case 1: this.currentValue = 1; frequency = config.afskFrq - config.afskShift / 2; break;
-		case -1: this.currentValue = -1; frequency = config.afskFrq + config.afskShift / 2; break;
+		case 1:
+			this.currentValue = 1;
+			this._setFrequencyAtTime(config.afskFrq - config.afskShift / 2, time);
+			break;
+		case -1:
+			this.currentValue = -1;
+			this._setFrequencyAtTime(config.afskFrq + config.afskShift / 2, time);
+			break;
+		default:
+			this.currentValue = 0;
+			this._setFrequencyAtTime(0, time);
 		}
-		this._oscillator.frequency.setValueAtTime(frequency, time);
 	}
 }
 
