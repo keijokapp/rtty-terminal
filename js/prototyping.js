@@ -9,10 +9,11 @@ const canvasMark = document.getElementById('proto-mark');
 const canvasSpace = document.getElementById('proto-space');
 const canvasMarkFft = document.getElementById('proto-mark-fft');
 const canvasSpaceFft = document.getElementById('proto-space-fft');
+const canvasFskInput = document.getElementById('proto-fsk-input');
 const canvasHilbertFft = document.getElementById('proto-hilbert-fft');
 const canvasHilbert = document.getElementById('proto-hilbert');
 
-const processor = audioCtx.createScriptProcessor(2048	, 1, 1);
+const processor = audioCtx.createScriptProcessor(2048, 1, 1);
 const dummyDestination = audioCtx.createMediaStreamDestination();
 processor.connect(dummyDestination);
 
@@ -35,7 +36,7 @@ processor.onaudioprocess = function(e) {
 
 	drawCanvas(canvasHilbert, 'red', h.imag);
 	drawCanvas(canvasHilbert, 'blue', h.real);
-
+/*
 	const markOutput = new Float32Array(input.length);
 	const spaceOutput = new Float32Array(input.length);
 
@@ -59,7 +60,7 @@ processor.onaudioprocess = function(e) {
 			markOutput[outputIndex] = markFilter(input[ii]);
 			spaceOutput[outputIndex] = spaceFilter(input[ii]);
 		}
-//	}
+	}
 	buffer = input;
 
 	drawCanvas(canvasMark, 'blue', markOutput);
@@ -71,9 +72,8 @@ processor.onaudioprocess = function(e) {
 	drawCanvas(canvasMarkFft, 'red', markFft.imag);
 	drawCanvas(canvasMarkFft, 'blue', markFft.real);
 	drawCanvas(canvasSpaceFft, 'red', spaceFft.imag);
-	drawCanvas(canvasSpaceFft, 'blue', spaceFft.real);
+	drawCanvas(canvasSpaceFft, 'blue', spaceFft.real);*/
 }
-
 
 analyser.connect(processor);
 
@@ -195,7 +195,6 @@ function drawCanvas(canvas, style, data) {
 
 const animationStart = audioCtx.currentTime;
 const changes = [];
-
 function draw() {
 
 	requestAnimationFrame(draw);
@@ -203,7 +202,7 @@ function draw() {
 	const period = 8; // in seconds
 	const time = audioCtx.currentTime - period;
 
-	const e = document.getElementById('fsk-input');
+	const e = canvasFskInput;
 	const ctx = e.getContext('2d');
 	ctx.strokeStyle = 'blue';
 
@@ -230,5 +229,7 @@ function draw() {
 		}
 	}
 	ctx.stroke();
+	return;
 }
+
 draw();
