@@ -3,12 +3,12 @@ import config, { events } from './state';
 import { AFSKKeyer, AFSKDekeyer } from './afsk';
 import { UARTTransmitter, UARTReceiver } from './uart';
 import { analyser } from './visualisation';
-import './prototyping';
+//import './prototyping';
 
 // Microphone input node
 var source;
 
-const bitSize = 1 / 45.45; // in seconds
+const bitSize = .005; // in seconds
 const samplesPerBit = audioCtx.sampleRate * bitSize;
 
 const afskKeyer = new AFSKKeyer();
@@ -65,7 +65,7 @@ window.events = events;
 navigator.mediaDevices.getUserMedia({ audio: true }).then(media => {
 	source = audioCtx.createMediaStreamSource(media);
 	afskDekeyer.setSource(analyser);
-	startRx();
+	startTx();
 }).catch(e => {
 	console.warn(e);
 });

@@ -160,6 +160,7 @@ export class UARTReceiver extends EventEmitter {
 		const bitCount = this._byteSize + 1 + this._parityBits + this._stopBits;
 
 		// read start bit
+		console.log('Reading start bit');
 		await new Promise((resolve, reject) => {
 			const sampleOffset = Math.round(this._byteStart + this._bitSize / 2);
 			samplings.push({sample: sampleOffset});
@@ -172,15 +173,19 @@ export class UARTReceiver extends EventEmitter {
 			})
 		});
 
+
 		// read data bits
+		console.log('Reading data bits');
 		const data = await new Promise((resolve, reject) => {
 
 			var byte = 0;
 			var parity = 0;
 			var bitIndex = 0;
 
-			const callback = value => {
+			const callback = (value, t) => {
+				console.log('fired: %d', t);
 				if(value === 0) {
+				console.log('failed');
 					reject(new Error('Zero value'));
 					return;
 				}
@@ -191,7 +196,7 @@ export class UARTReceiver extends EventEmitter {
 				}
 
 				byte |= value << bitIndex++;
-
+				console.log(bitIndex);
 				if(bitIndex >= this._byteSize) {
 					resolve({ byte, parity });
 				}
@@ -199,6 +204,7 @@ export class UARTReceiver extends EventEmitter {
 
 			for(let i = 1; i <= this._byteSize; i++) {
 				const sampleOffset = Math.round(this._byteStart + (i + .5) * this._bitSize);
+console.log(sampleOffset);
 				samplings.push({sample: sampleOffset});
 				this._dekeyer.once('' + sampleOffset, callback);
 			}
@@ -206,6 +212,7 @@ export class UARTReceiver extends EventEmitter {
 
 		// read & check parity
 		if(this._parityBits) {
+			console.log('Reading parity bits');
 			const parity = await new Promise((resolve, reject) => {
 
 				var parity = 0;
@@ -238,6 +245,7 @@ export class UARTReceiver extends EventEmitter {
 		}
 
 		// read stop bits
+		console.log('Reading stop bits');
 		await new Promise((resolve, reject) => {
 			const sampleOffset = Math.round(this._byteStart + (1 + this._byteSize + this._parityBits + this._stopBits / 2) * this._bitSize);
 			samplings.push({sample: sampleOffset});
