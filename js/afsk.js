@@ -184,11 +184,8 @@ export class AFSKDekeyer extends EventEmitter {
 		const normalizedMark = (config.afskFrq - config.afskShift / 2) / audioCtx.sampleRate;
 		const normalizedSpace = (config.afskFrq + config.afskShift / 2) / audioCtx.sampleRate;
 
-/*
-		const markFilter = bandpassButterworthFilter(normalizedMark - size, normalizedMark + size);
-		const spaceFilter = bandpassButterworthFilter(normalizedSpace - size, normalizedSpace + size);
-*/
-		const n = 48 * 3;
+		const n = 96;
+
 		const markFilter = goertzelFilter(normalizedMark, n);
 		const spaceFilter = goertzelFilter(normalizedSpace, n);
 
@@ -204,15 +201,9 @@ export class AFSKDekeyer extends EventEmitter {
 			const spaceOutput = e.outputBuffer.getChannelData(1);
 
 			for(let i = 0; i < input.length; i++) {
-				markOutput[i] = markFilter(input[i]);
-				spaceOutput[i] = spaceFilter(input[i]);
+				markOutput[i] = markFilter(input[i]) - 1000;
+				spaceOutput[i] = spaceFilter(input[i]) - 1000;
 			}
-
-			clearCanvas(canvasMarkInput, canvasSpaceInput);
-			drawCanvas(canvasMarkInput, 'red', input);
-			drawCanvas(canvasSpaceInput, 'red', input);
-			drawCanvas(canvasMarkInput, 'blue', markOutput);
-			drawCanvas(canvasSpaceInput, 'blue', spaceOutput);
 		}
 
 		processor(this._bandpass, this);
