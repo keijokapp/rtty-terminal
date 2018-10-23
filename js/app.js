@@ -1,7 +1,6 @@
 import audioCtx from './audioContext';
-import config, { events } from './state';
-import { AFSKKeyer, AFSKDekeyer } from './afsk';
-import { UARTTransmitter, UARTReceiver } from './uart';
+import { AFSKDekeyer, AFSKKeyer } from './afsk';
+import { UARTReceiver, UARTTransmitter } from './uart';
 import { analyser } from './visualisation';
 
 // Microphone input node
@@ -53,20 +52,54 @@ function startTx() {
 	afskKeyer.output.connect(analyser);
 }
 
+
+const oscillator = audioCtx.createOscillator();
+oscillator.frequency.value = 915;
+oscillator.start()
+
+window.onkeydown = () => {
+	oscillator.frequency.setValueAtTime(1085, 0);
+};
+
+window.onkeyup = () => {
+	oscillator.frequency.setValueAtTime(915, 0);
+};
+
+
+const noise = audioCtx.createScriptProcessor();
+noise.onaudioprocess = e => {
+	const input = e.inputBuffer.getChannelData(0);
+	const output= e.outputBuffer.getChannelData(0);
+	for(let i = 0; i < input.length; i++) {
+		output[i] = input[i] / 10 + Math.random() - .5;
+	}
+};
+
+source = oscillator.connect(noise);
+noise.connect(audioCtx.destination);
+afskDekeyer.setSource(noise);
+startRx();
+
 window.startRx = startRx;
 window.startTx = startTx;
-window.queue = s => afskKeyer.queue(s);
-window.setValueAtTime = (s, t) => afskKeyer.setValueAtTime(s, t);
 window.audioCtx = audioCtx;
 window.send = v => uartTransmitter.send(v);
-window.events = events;
 
-navigator.mediaDevices.getUserMedia({ audio: true }).then(media => {
-	source = audioCtx.createMediaStreamSource(media);
-	afskDekeyer.setSource(source);
+/*
+navigator.mediaDevices.getUserMedia({
+	audio: {
+		echoCancellation: false,
+		noiseSuppression: false,
+		autoGainControl: false
+	}
+}).then(media => {
+	const mediaSource = audioCtx.createMediaStreamSource(media);
+	mediaSource.connect(noise);
+	source = noise;
+	afskDekeyer.setSource(noise);
 	startRx();
 }).catch(e => {
 	console.warn(e);
 });
 
-
+*/

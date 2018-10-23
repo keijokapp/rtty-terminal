@@ -8,10 +8,10 @@ export class UARTTransmitter {
 	 * @constructor
 	 * @param keyer {Keyer} Keyer to be used for transmitting
 	 * @param options {object} Options
-   * @param options.byteSize {number} Number of bits in byte
-   * @param options.bitSize {number} Length of bit in keyers time scale
-   * @param options.parityBits {number} Number of parity bits
-   * @param options.stopBits {number} Number of stop bits
+	 * @param options.byteSize {number} Number of bits in byte
+	 * @param options.bitSize {number} Length of bit in keyers time scale
+	 * @param options.parityBits {number} Number of parity bits
+	 * @param options.stopBits {number} Number of stop bits
 	 */
 	constructor(keyer, options) {
 		this._keyer = keyer;
@@ -29,7 +29,7 @@ export class UARTTransmitter {
 		const standbyTime = .1;
 		const maxParity = (1 << this._parityBits) - 1;
 
-		const bits = [ ];
+		const bits = [];
 
 		var parity = 0;
 		var time = 0;
@@ -64,7 +64,7 @@ export class UARTTransmitter {
 			time += this._bitSize;
 			parity >>= 1;
 		}
-		
+
 		bits.push({ timestamp: time, value: 1 }); // stop bits
 
 		bits.push({ timestamp: time + this._stopBits * this._bitSize, value: 0 });
@@ -82,7 +82,7 @@ const States = {
 	WAIT_HIGH: 1,
 	WAIT_START: 2,
 	DECODING: 3
-}
+};
 
 
 export class UARTReceiver extends EventEmitter {
@@ -91,10 +91,10 @@ export class UARTReceiver extends EventEmitter {
 	 * @constructor
 	 * @param dekeyer {Dekeyer} Dekeyer used for receiving
 	 * @param options {object} Options
-   * @param options.byteSize {number} Number of bits in byte
-   * @param options.bitSize {number} Length of bit in keyers time scale
-   * @param options.parityBits {number} Number of parity bits
-   * @param options.stopBits {number} Number of stop bits
+	 * @param options.byteSize {number} Number of bits in byte
+	 * @param options.bitSize {number} Length of bit in keyers time scale
+	 * @param options.parityBits {number} Number of parity bits
+	 * @param options.stopBits {number} Number of stop bits
 	 */
 	constructor(dekeyer, options) {
 		super();
@@ -112,7 +112,6 @@ export class UARTReceiver extends EventEmitter {
 		}
 
 		this._dekeyer.on('change', this._change.bind(this));
-
 	}
 
 	_change(value, time, timeStamp) {
@@ -120,25 +119,25 @@ export class UARTReceiver extends EventEmitter {
 		changes.push({
 			value, time: timeStamp, sample: time
 		});
-		
+
 		switch(this._state) {
-		case States.DECODING:
-			break;
-		case States.WAIT_HIGH:
-			if(value === 1) { // Got high value
-				this._state = States.WAIT_START;
-			}
-			break;
-		case States.WAIT_START:
-			if(value === -1) { // Got start bit
-				this._state = States.DECODING;
-				this._byteStart = time;
-				this._decode();
-			} else if(value !== 1) {
-				console.log('Reverted to waiting high value')
-				this._state = States.WAIT_HIGH;
-			}
-			break;
+			case States.DECODING:
+				break;
+			case States.WAIT_HIGH:
+				if(value === 1) { // Got high value
+					this._state = States.WAIT_START;
+				}
+				break;
+			case States.WAIT_START:
+				if(value === -1) { // Got start bit
+					this._state = States.DECODING;
+					this._byteStart = time;
+					this._decode();
+				} else if(value !== 1) {
+					console.log('Reverted to waiting high value');
+					this._state = States.WAIT_HIGH;
+				}
+				break;
 		}
 	}
 
@@ -165,7 +164,9 @@ export class UARTReceiver extends EventEmitter {
 			}
 
 			value = value === 1 ? 1 : 0;
-			if(value && bitIndex > 0 && bitIndex <= this._byteSize) parity++;
+			if(value && bitIndex > 0 && bitIndex <= this._byteSize) {
+				parity++;
+			}
 
 			byteValue |= value << bitIndex++;
 
@@ -186,7 +187,7 @@ export class UARTReceiver extends EventEmitter {
 				console.log('Got byte: %s', byteValue);
 				this._state = this._dekeyer.currentValue !== 1 ? States.WAIT_HIGH : States.WAIT_START;
 			}
-		}
+		};
 
 		for(let i = 0; i < bitCount; i++) {
 			const sampleOffset = this._byteStart + i * this._bitSize + this._bitSize / 2;
@@ -212,15 +213,15 @@ function draw() {
 	const e = document.getElementById('fsk-input');
 	const ctx = e.getContext('2d');
 	ctx.strokeStyle = 'blue';
-	
+
 	while(changes[1] && changes[1].time < time - period) {
 		changes.shift();
 	}
-	
+
 	var changeIndex = 0;
 	var currentValue = 0;
 	var nextChange = changes[changeIndex];
-	
+
 	ctx.clearRect(0, 0, e.width, e.height);
 
 	ctx.beginPath();
@@ -236,7 +237,7 @@ function draw() {
 		}
 	}
 	ctx.stroke();
-	
+
 	if(changes[0]) {
 		const referenceSample = changes[0].sample;
 		const referenceTime = changes[0].time;
@@ -246,11 +247,11 @@ function draw() {
 		const totalSamples = period * audioCtx.sampleRate / 1000;
 
 		ctx.strokeStyle = 'red';
-		ctx.beginPath();		
+		ctx.beginPath();
 		for(const sampling of samplings) {
 			const x = e.width * (sampling.sample - firstSample) / totalSamples;
-			ctx.moveTo(x, 0);	
-			ctx.lineTo(x, e.height);		
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, e.height);
 		}
 		ctx.stroke();
 
@@ -259,5 +260,5 @@ function draw() {
 		}
 	}
 }
+
 draw();
-//setInterval(draw, 1000);
