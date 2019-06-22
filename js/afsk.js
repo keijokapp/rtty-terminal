@@ -95,137 +95,6 @@ export class AFSKKeyer {
 // decoder
 
 /**
- * Bandpass second-order butterworth filter
- * @param f1 {number} Low cutoff frequency
- * @param f2 {number} High cutoff frequency
- * @returns {function} Sample processor
- */
-function bandpassFilter(f1, f2) {
-
-	const a = Math.cos(Math.PI * (f2 + f1)) / Math.cos(Math.PI * (f2 - f1));
-	const a2 = a * a;
-	const b = Math.tan(Math.PI * (f2 - f1));
-	const b2 = b * b;
-
-	const r = Math.sin(Math.PI / 4);
-	const s = b2 + 2.0 * b * r + 1.0;
-	const d1 = 4.0 * a * (1.0 + b * r) / s;
-	const d2 = 2.0 * (b2 - 2.0 * a2 - 1.0) / s;
-	const d3 = 4.0 * a * (1.0 - b * r) / s;
-	const d4 = -(b2 - 2.0 * b * r + 1.0) / s;
-
-	console.log('Butterworth bandpass coefficients:\n%f %f %f %f', d1, d2, d3, d4);
-
-	var x0, x1, x2, x3, x4;
-	var y0, y1, y2, y3, y4;
-	x0 = x1 = x2 = x3 = 0;
-	y0 = y1 = y2 = y3 = 0;
-
-	return sample => {
-		x4 = x3;
-		x3 = x2;
-		x2 = x1;
-		x1 = x0;
-		x0 = sample;
-		y4 = y3;
-		y3 = y2;
-		y2 = y1;
-		y1 = y0;
-		y0 = x4 - 2 * x1 + x0
-			+ d4 * y4 + d3 * y3
-			+ d2 * y2 + d1 * y1;
-
-		return y0;
-	};
-}
-
-
-/**
- * Bandpass second-order biquad filter
- * @unused
- * @param f {number} Ceter frequency
- * @param q {number} Q value
- * @returns {function} Sample processor
- */
-function biquadFilter(f, q) {
-	const K = Math.tan(Math.PI * f);
-	const norm = 1 / (1 + K / q + K * K);
-	const a0 = K / q * norm;
-	const a1 = 0;
-	const a2 = -a0;
-	const b1 = 2 * (K * K - 1) * norm;
-	const b2 = (1 - K / q + K * K) * norm;
-	let z1 = 0, z2 = 0;
-	return sample => {
-		const out = sample * a0 + z1;
-		z1 = sample * a1 + z2 - b1 * out;
-		z2 = sample * a2 - b2 * out;
-		return out;
-	};
-}
-
-
-/**
- * Lowpass second-order butterworth filter
- * @param f {number} Cutoff frequency
- * @returns {function} Sample processor
- */
-function lowpassFilter(f) {
-
-	const q = Math.sqrt(2.0);
-	const K = 1 / Math.tan(Math.PI * f);
-	const b0 = 1 / (1 + q * K + K * K);
-	const b1 = 2 * b0;
-	const b2 = b0;
-	const d1 = 2 * (K * K - 1) * b0;
-	const d2 = -(1 - q * K + K * K) * b0;
-
-	console.log('Butterworth lowpass coefficients:\n%f %f', d1, d2);
-
-	var x0, x1, x2;
-	var y0, y1, y2;
-	x0 = x1 = 0;
-	y0 = y1 = 0;
-
-	return sample => {
-		x2 = x1;
-		x1 = x0;
-		x0 = sample;
-		y2 = y1;
-		y1 = y0;
-		y0 = x2 + 2 * x1 + x0
-			+ d2 * y2 + d1 * y1;
-		return y0;
-	};
-}
-
-
-/**
- * Lowpass second-order biquad filter
- * @unused
- * @param f {number} Cutoff frequency
- * @param q {number} Q value
- * @returns {function} Sample processor
- */
-function lowpassFilter2(f, q) {
-	const K = Math.tan(Math.PI * f);
-	const norm = 1 / (1 + K / q + K * K);
-	const a0 = K * K * norm;
-	const a1 = 2 * a0;
-	const a2 = a0;
-	const b1 = 2 * (K * K - 1) * norm;
-	const b2 = (1 - K / q + K * K) * norm;
-	let z1 = 0, z2 = 0;
-	return sample => {
-		const out = sample * a0 + z1;
-		z1 = sample * a1 + z2 - b1 * out;
-		z2 = sample * a2 - b2 * out;
-		return out;
-	};
-}
-
-
-/**
  * Goertzel filter
  */
 function goertzelFilter(f, N) {
@@ -272,16 +141,8 @@ export class AFSKDekeyer extends EventEmitter {
 		const normalizedMark = (config.afskFrq - config.afskShift / 2) / audioCtx.sampleRate;
 		const normalizedSpace = (config.afskFrq + config.afskShift / 2) / audioCtx.sampleRate;
 
-		const size = 5 / audioCtx.sampleRate;
-		const gain = 8.7e7;
-
-//		const markFilter = bandpassFilter(normalizedMark - size, normalizedMark + size);
-//		const spaceFilter = bandpassFilter(normalizedSpace - size, normalizedSpace + size);
 		const markFilter = goertzelFilter(normalizedMark, 240);
 		const spaceFilter = goertzelFilter(normalizedSpace, 240);
-//		const markFilter = goertzelFilter(normalizedMark);
-//		const spaceFilter = goertzelFilter(normalizedSpace);
-		const lpFilter = lowpassFilter2(1000 / audioCtx.sampleRate, 9e100);
 
 		this._processor = audioCtx.createScriptProcessor(null, 1, 1);
 		this._processor.onaudioprocess = function(e) {
