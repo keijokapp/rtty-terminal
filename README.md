@@ -3,11 +3,10 @@
 Currently it's only able to transmit and receive UART messages (i.e. no real UI and RTTY).
 
 
-Usage:
+Usage (using [webpack-dev-server](https://www.npmjs.com/package/webpack-dev-server)):
 
 ```sh
-npm install
-./index.js
+webpack serve
 ```
 
 Navigate to shown location and use browser console to interact with application
@@ -16,7 +15,7 @@ startTx(); // connects oscillator to analyser and decoder input
 startRx(); // connects microphone input to analyser and decoder input
 send(byteNumber); // send byte to audio destination
 setValueAtTime(-1|0|1); // manually set oscillator to space/silence/mark state
-// decoded messages should also be logged to console 
+// decoded messages should also be logged to console
 ```
 
 Future plans:

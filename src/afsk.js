@@ -1,14 +1,12 @@
 import { EventEmitter } from 'events';
-import config, { events } from './state';
-import audioCtx from './audioContext';
+import config, { events } from './state.js';
+import audioCtx from './audioContext.js';
 
 // encoder
 
 // class AFSKKeyer implementes Keyer
 export class AFSKKeyer {
-
 	constructor() {
-
 		this._oscillator = audioCtx.createOscillator();
 		this._oscillator.frequency.value = 0;
 		this._oscillator.start();
@@ -19,17 +17,17 @@ export class AFSKKeyer {
 		this.output = audioCtx.createChannelMerger(2);
 
 		const noise = audioCtx.createScriptProcessor(null, 1, 1);
-		noise.onaudioprocess = function(e) {
+		noise.onaudioprocess = function (e) {
 			const outputData = e.outputBuffer.getChannelData(0);
 			const l = outputData.length;
-			for(let i = 0; i < l; i++) {
-				outputData[i] = Math.random() * 2 - 1; //Math.sin(sampleIndex * coefficient);
+			for (let i = 0; i < l; i++) {
+				outputData[i] = Math.random() * 2 - 1; // Math.sin(sampleIndex * coefficient);
 			}
-			if(e.playbackTime <= audioCtx.currentTime) {
+			if (e.playbackTime <= audioCtx.currentTime) {
 				console.log('Audio queue empty');
 			}
 		};
-//		noise.connect(this.output);
+		// noise.connect(this.output);
 
 		const gain = audioCtx.createGain();
 		gain.gain.value = 1;
@@ -41,12 +39,12 @@ export class AFSKKeyer {
 
 	_toggleAudioOutput() {
 		try {
-			if(config.afskOutput) {
+			if (config.afskOutput) {
 				this.output.connect(audioCtx.destination);
 			} else {
 				this.output.disconnect(audioCtx.destination);
 			}
-		} catch(e) {
+		} catch (e) {
 			// intentionally ignored
 		}
 	}
@@ -58,8 +56,8 @@ export class AFSKKeyer {
 
 	queue(values) {
 		values = values.slice(0).sort((a, b) => a.timestamp - b.timestamp);
-		const c = Math.max(this._queueEnd, audioCtx.currentTime + .001);
-		for(const value of values) {
+		const c = Math.max(this._queueEnd, audioCtx.currentTime + 0.001);
+		for (const value of values) {
 			this._queueEnd = c + value.timestamp;
 			this.setValueAtTime(value.value, this._queueEnd);
 		}
@@ -72,25 +70,24 @@ export class AFSKKeyer {
 	}
 
 	setValueAtTime(value, time) {
-		if(!Number.isFinite(time)) {
+		if (!Number.isFinite(time)) {
 			time = 0;
 		}
-		var frequency = 0;
+		let frequency = 0;
 		this.currentValue = 0;
-		switch(value) {
-			case 1:
-				this.currentValue = 1;
-				frequency = config.afskFrq - config.afskShift / 2;
-				break;
-			case -1:
-				this.currentValue = -1;
-				frequency = config.afskFrq + config.afskShift / 2;
-				break;
+		switch (value) {
+		case 1:
+			this.currentValue = 1;
+			frequency = config.afskFrq - config.afskShift / 2;
+			break;
+		case -1:
+			this.currentValue = -1;
+			frequency = config.afskFrq + config.afskShift / 2;
+			break;
 		}
 		this._oscillator.frequency.setValueAtTime(frequency, time);
 	}
 }
-
 
 // decoder
 
@@ -99,7 +96,7 @@ export class AFSKKeyer {
  */
 function goertzelFilter(f, N) {
 	const buffer = new Array(N);
-	for(let i = 0; i < N; i++) {
+	for (let i = 0; i < N; i++) {
 		buffer[i] = 0;
 	}
 
@@ -110,8 +107,10 @@ function goertzelFilter(f, N) {
 
 	return sample => {
 		buffer[offset] = sample;
-		let Skn = 0, Skn1 = 0, Skn2 = 0;
-		for(let i = 0; i < N; i++) {
+		let Skn = 0;
+		let Skn1 = 0;
+		let Skn2 = 0;
+		for (let i = 0; i < N; i++) {
 			const sample = buffer[(offset + i) % N];
 			Skn2 = Skn1;
 			Skn1 = Skn;
@@ -124,9 +123,7 @@ function goertzelFilter(f, N) {
 	};
 }
 
-
 export class AFSKDekeyer extends EventEmitter {
-
 	/**
 	 * @constructor
 	 */
@@ -145,13 +142,13 @@ export class AFSKDekeyer extends EventEmitter {
 		const spaceFilter = goertzelFilter(normalizedSpace, 240);
 
 		this._processor = audioCtx.createScriptProcessor(null, 1, 1);
-		this._processor.onaudioprocess = function(e) {
+		this._processor.onaudioprocess = function (e) {
 			const input = e.inputBuffer.getChannelData(0);
 			const markOutput = new Array(this.bufferSize);
 			const spaceOutput = new Array(this.bufferSize);
 			const fskSamples = new Array(this.bufferSize);
 
-			for(let i = 0; i < input.length; i++) {
+			for (let i = 0; i < input.length; i++) {
 				markOutput[i] = markFilter(input[i]);
 				spaceOutput[i] = spaceFilter(input[i]);
 				fskSamples[i] = markOutput[i] - spaceOutput[i];
@@ -168,11 +165,11 @@ export class AFSKDekeyer extends EventEmitter {
 	}
 
 	setSource(source) {
-		if(!(source instanceof AudioNode)) {
+		if (!(source instanceof AudioNode)) {
 			throw new Error('Argument is not AudioNode');
 		}
 
-		if(this._source) {
+		if (this._source) {
 			this._source.disconnect(this._processor);
 		}
 
@@ -211,7 +208,10 @@ function draw() {
 	if(samples[0]) {
 		ctx.strokeStyle = 'blue';
 		ctx.beginPath();
-		ctx.moveTo((samples[0].time - time + period) * pixelsPerMillisecond, halfHeight + samples[0].value);
+		ctx.moveTo(
+			(samples[0].time - time + period) * pixelsPerMillisecond,
+			halfHeight + samples[0].value
+		);
 		for(const sample of samples) {
 			ctx.lineTo((sample.time - time + period) * pixelsPerMillisecond, halfHeight + sample.value);
 		}
@@ -221,8 +221,7 @@ function draw() {
 	requestAnimationFrame(draw);
 }
 
-draw();*/
-
+draw(); */
 
 function drawFilters(spaceSamples, markSamples) {
 	const e = document.getElementById('mark-filter');
@@ -239,14 +238,14 @@ function drawFilters(spaceSamples, markSamples) {
 	const pixelsPerSample = e.width / spaceSamples.length;
 
 	let max = 0;
-	for(const sample of spaceSamples) {
+	for (const sample of spaceSamples) {
 		const abs = sample > 0 ? sample : -sample;
-		if(abs > max) max = abs;
+		if (abs > max) max = abs;
 	}
 
-	for(const sample of markSamples) {
+	for (const sample of markSamples) {
 		const abs = sample > 0 ? sample : -sample;
-		if(abs > max) max = abs;
+		if (abs > max) max = abs;
 	}
 
 	const coeff = halfHeight / max;
@@ -254,7 +253,7 @@ function drawFilters(spaceSamples, markSamples) {
 	ctx.beginPath();
 	ctx.strokeStyle = 'red';
 	ctx.moveTo(0, halfHeight);
-	for(let i = 0, l = spaceSamples.length; i < l; i++) {
+	for (let i = 0, l = spaceSamples.length; i < l; i++) {
 		ctx.lineTo(i * pixelsPerSample, halfHeight - spaceSamples[i] * coeff);
 	}
 	ctx.stroke();
@@ -262,13 +261,11 @@ function drawFilters(spaceSamples, markSamples) {
 	ctx.beginPath();
 	ctx.strokeStyle = 'blue';
 	ctx.moveTo(0, halfHeight);
-	for(let i = 0, l = markSamples.length; i < l; i++) {
+	for (let i = 0, l = markSamples.length; i < l; i++) {
 		ctx.lineTo(i * pixelsPerSample, halfHeight - markSamples[i] * coeff);
 	}
 	ctx.stroke();
-
 }
-
 
 function drawFskSamples(samples) {
 	const e = document.getElementById('fsk-samples');
@@ -287,7 +284,8 @@ function drawFskSamples(samples) {
 	ctx.beginPath();
 	ctx.strokeStyle = 'red';
 	ctx.moveTo(0, halfHeight);
-	for(let i = 0, l = samples.length; i < l; i++) {
+	for (let i = 0, l = samples.length; i < l; i++) {
+		// eslint-disable-next-line no-nested-ternary
 		ctx.lineTo(i * pixelsPerSample, samples[i] > 0 ? 0 : (samples[i] < 0 ? e.height : halfHeight));
 	}
 	ctx.stroke();
@@ -295,7 +293,7 @@ function drawFskSamples(samples) {
 	ctx.beginPath();
 	ctx.strokeStyle = 'blue';
 	ctx.moveTo(0, halfHeight);
-	for(let i = 0, l = samples.length; i < l; i++) {
+	for (let i = 0, l = samples.length; i < l; i++) {
 		ctx.lineTo(i * pixelsPerSample, halfHeight - samples[i]);
 	}
 	ctx.stroke();

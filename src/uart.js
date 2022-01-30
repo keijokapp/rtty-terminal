@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events';
+import audioCtx from './audioContext.js';
 
 // encoder
 
 export class UARTTransmitter {
-
 	/**
 	 * @constructor
 	 * @param keyer {Keyer} Keyer to be used for transmitting
@@ -26,16 +26,18 @@ export class UARTTransmitter {
 	 * @param byte {number} integer byte value
 	 */
 	send(byte) {
-		const standbyTime = .1;
+		// eslint-disable-next-line no-unused-vars
+		const standbyTime = 0.1;
+		// eslint-disable-next-line no-unused-vars
 		const maxParity = (1 << this._parityBits) - 1;
 
 		const bits = [];
 
-		var parity = 0;
-		var time = 0;
+		let parity = 0;
+		let time = 0;
 
-//		bits.push({ timestamp: time, value: 1 }) // standby value, high
-//		time += standbyTime;
+		// bits.push({ timestamp: time, value: 1 }) // standby value, high
+		// time += standbyTime;
 
 		bits.push({ timestamp: time, value: -1 });
 		time += this._bitSize;
@@ -43,8 +45,8 @@ export class UARTTransmitter {
 		console.log('Sending: %s', byte.toString(2));
 
 		// data bits
-		for(let i = 0; i < this._byteSize; i++) {
-			if(byte & 1) {
+		for (let i = 0; i < this._byteSize; i++) {
+			if (byte & 1) {
 				bits.push({ timestamp: time, value: 1 }); // mark, high
 				parity++;
 			} else {
@@ -55,8 +57,8 @@ export class UARTTransmitter {
 		}
 
 		// parity bits
-		for(let i = 0; i < this._parityBits; i++) {
-			if(parity & 1) {
+		for (let i = 0; i < this._parityBits; i++) {
+			if (parity & 1) {
 				bits.push({ timestamp: time, value: 1 }); // mark, high
 			} else {
 				bits.push({ timestamp: time, value: -1 }); // space, low
@@ -71,12 +73,9 @@ export class UARTTransmitter {
 
 		return this._keyer.queue(bits);
 	}
-
 }
 
-
 // decoder
-
 
 const States = {
 	WAIT_HIGH: 1,
@@ -84,9 +83,7 @@ const States = {
 	DECODING: 3
 };
 
-
 export class UARTReceiver extends EventEmitter {
-
 	/**
 	 * @constructor
 	 * @param dekeyer {Dekeyer} Dekeyer used for receiving
@@ -105,7 +102,7 @@ export class UARTReceiver extends EventEmitter {
 		this._parityBits = options.parityBits;
 		this._stopBits = options.stopBits;
 
-		if(dekeyer.currentValue !== -1) {
+		if (dekeyer.currentValue !== -1) {
 			this._state = States.WAIT_HIGH;
 		} else {
 			this._state = States.WAIT_START;
@@ -115,68 +112,67 @@ export class UARTReceiver extends EventEmitter {
 	}
 
 	_change(value, time, timeStamp) {
-
 		changes.push({
 			value, time: timeStamp, sample: time
 		});
 
-		switch(this._state) {
-			case States.DECODING:
-				break;
-			case States.WAIT_HIGH:
-				if(value === 1) { // Got high value
-					this._state = States.WAIT_START;
-				}
-				break;
-			case States.WAIT_START:
-				if(value === -1) { // Got start bit
-					this._state = States.DECODING;
-					this._byteStart = time;
-					this._decode();
-				} else if(value !== 1) {
-					console.log('Reverted to waiting high value');
-					this._state = States.WAIT_HIGH;
-				}
-				break;
+		switch (this._state) {
+		case States.DECODING:
+			break;
+		case States.WAIT_HIGH:
+			if (value === 1) { // Got high value
+				this._state = States.WAIT_START;
+			}
+			break;
+		case States.WAIT_START:
+			if (value === -1) { // Got start bit
+				this._state = States.DECODING;
+				this._byteStart = time;
+				this._decode();
+			} else if (value !== 1) {
+				console.log('Reverted to waiting high value');
+				this._state = States.WAIT_HIGH;
+			}
+			break;
 		}
 	}
 
-	_decode(bitIndex) {
-
-		const ctrlMask = (((1 << this._stopBits) - 1) << (this._byteSize + this._parityBits + 1)) | 1; // mask for start and stop bits
+	_decode() {
+		// mask for start and stop bits
+		const ctrlMask = (((1 << this._stopBits) - 1) << (this._byteSize + this._parityBits + 1)) | 1;
 		const maxParity = (1 << this._parityBits) - 1; // max parity value
 		const parityMask = maxParity << (this._byteSize + 1); // mask for parity bits
 
 		const bitCount = this._byteSize + 1 + this._parityBits + this._stopBits;
-		var error = false;
-		var byteValue = 0;
-		var bitIndex = 0;
-		var parity = 0;
+		let error = false;
+		let byteValue = 0;
+		let bitIndex = 0;
+		let parity = 0;
 
 		const callback = value => {
-			if(error) {
+			if (error) {
 				return;
 			}
-			if(value === 0) {
+			if (value === 0) {
 				error = true;
 				console.log('ERROR: Got zero value');
 				return;
 			}
 
 			value = value === 1 ? 1 : 0;
-			if(value && bitIndex > 0 && bitIndex <= this._byteSize) {
+			if (value && bitIndex > 0 && bitIndex <= this._byteSize) {
 				parity++;
 			}
 
 			byteValue |= value << bitIndex++;
 
-			if(bitIndex >= bitCount) {
-				if((byteValue & ctrlMask) === ctrlMask - 1) {
+			if (bitIndex >= bitCount) {
+				if ((byteValue & ctrlMask) === ctrlMask - 1) {
 					console.log('Start and stop bits OK');
 				} else {
 					console.log('Start and stop bits NOT OK');
 				}
-				if((byteValue & parityMask) >> (this._byteSize + 1) === (parity & maxParity)) {
+				if ((byteValue & parityMask) >> (this._byteSize + 1) === (parity & maxParity)) {
 					console.log('Parity bits OK');
 				} else {
 					console.log('Parity bits NOT OK: parity bit: %d; byte parity: %d', (byteValue & parityMask) >> (this._byteSize + 1), parity);
@@ -189,14 +185,13 @@ export class UARTReceiver extends EventEmitter {
 			}
 		};
 
-		for(let i = 0; i < bitCount; i++) {
+		for (let i = 0; i < bitCount; i++) {
 			const sampleOffset = this._byteStart + i * this._bitSize + this._bitSize / 2;
 			samplings.push({ sample: sampleOffset });
-			this._dekeyer.once('' + sampleOffset, callback);
+			this._dekeyer.once(`${sampleOffset}`, callback);
 		}
 	}
 }
-
 
 // debug
 
@@ -204,7 +199,6 @@ const changes = [];
 const samplings = [];
 
 function draw() {
-
 	requestAnimationFrame(draw);
 
 	const period = 8000; // in milliseconds
@@ -214,31 +208,31 @@ function draw() {
 	const ctx = e.getContext('2d');
 	ctx.strokeStyle = 'blue';
 
-	while(changes[1] && changes[1].time < time - period) {
+	while (changes[1] && changes[1].time < time - period) {
 		changes.shift();
 	}
 
-	var changeIndex = 0;
-	var currentValue = 0;
-	var nextChange = changes[changeIndex];
+	let changeIndex = 0;
+	let currentValue = 0;
+	let nextChange = changes[changeIndex];
 
 	ctx.clearRect(0, 0, e.width, e.height);
 
 	ctx.beginPath();
-	for(let i = 0; i < e.width; i++) {
+	for (let i = 0; i < e.width; i++) {
 		const timeScale = time + period * i / e.width;
-		while(nextChange && nextChange.time <= timeScale) {
+		while (nextChange && nextChange.time <= timeScale) {
 			currentValue = nextChange.value;
 			nextChange = changes[changeIndex++];
 		}
-		if(currentValue) {
+		if (currentValue) {
 			ctx.moveTo(i, e.height / 2);
 			ctx.lineTo(i, currentValue > 0 ? 0 : e.height);
 		}
 	}
 	ctx.stroke();
 
-	if(changes[0]) {
+	if (changes[0]) {
 		const referenceSample = changes[0].sample;
 		const referenceTime = changes[0].time;
 		const referenceTimeOffset = referenceTime - time;
@@ -248,14 +242,14 @@ function draw() {
 
 		ctx.strokeStyle = 'red';
 		ctx.beginPath();
-		for(const sampling of samplings) {
+		for (const sampling of samplings) {
 			const x = e.width * (sampling.sample - firstSample) / totalSamples;
 			ctx.moveTo(x, 0);
 			ctx.lineTo(x, e.height);
 		}
 		ctx.stroke();
 
-		while(samplings[0] && samplings[0].sample < firstSample) {
+		while (samplings[0] && samplings[0].sample < firstSample) {
 			samplings.shift();
 		}
 	}

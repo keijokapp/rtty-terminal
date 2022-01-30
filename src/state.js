@@ -11,21 +11,20 @@ const config = {
 };
 
 export default config;
-export const events = new EventEmitter;
+export const events = new EventEmitter();
 
 function setState(key, value) {
 	config[key] = value;
 }
 
-for(const key of Object.keys(config)) {
+for (const key of Object.keys(config)) {
 	events.on(key, setState.bind(config, key));
 }
 
 function resize() {
 	const WIDTH = document.body.clientWidth;
 
-
-	for(const canvas of document.querySelectorAll('.canvasContainer > canvas.full-width')) {
+	for (const canvas of document.querySelectorAll('.canvasContainer > canvas.full-width')) {
 		canvas.width = WIDTH;
 		canvas.height = 128;
 	}

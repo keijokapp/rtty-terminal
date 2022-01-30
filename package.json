@@ -1,16 +1,22 @@
 {
-	"name": "rtty-decoder-js",
+	"type": "module",
+	"name": "rtty-terminal",
 	"version": "0.0.1",
 	"description": "RTTY decoder based on navigator.getUserMedia and FFT implementation by Nick Jones (https://github.com/dntj/jsfft)",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/keijokapp/rtty-decoder-js"
+		"url": "https://github.com/keijokapp/rtty-terminal"
 	},
-	"dependencies": {
-		"express": "latest",
-		"morgan": "latest",
-		"express-babelify-middleware": "latest",
-		"babel-plugin-transform-es2015-modules-commonjs": "latest",
-		"babel-plugin-syntax-async-functions": "latest"
+	"author": "Keijo Kapp <keijo.kapp@gmail.com>",
+	"license": "ISC",
+	"scripts": {
+		"lint": "eslint webpack.config.js src"
+	},
+	"devDependencies": {
+		"eslint": "^8.8.0",
+		"eslint-config-airbnb-base": "^15.0.0",
+		"html-webpack-plugin": "^5.5.0",
+		"webpack": "^5.67.0",
+		"webpack-dev-server": "^4.7.3"
 	}
 }

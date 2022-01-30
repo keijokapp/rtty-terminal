@@ -1,0 +1,41 @@
+extends: airbnb-base
+
+parserOptions:
+  ecmaVersion: 2020
+  sourceType: module
+
+overrides:
+  - files: ["webpack.config.js",  "src/**"]
+    rules:
+      import/no-extraneous-dependencies: ["error", {}]
+  - files: ["src/**"]
+    env:
+      browser: true
+    parserOptions:
+      ecmaFeatures:
+        jsx: true
+
+rules:
+  array-callback-return: off
+  arrow-parens: ["error", "as-needed"]
+  comma-dangle: ["error", "never"]
+  consistent-return: off
+  default-case: off
+  eqeqeq: ["error", "always"]
+  func-names: off
+  indent: ["error", "tab"]
+  import/extensions: ["error", "always"]
+  import/no-commonjs: error
+  max-classes-per-file: off
+  no-await-in-loop: off
+  no-bitwise: off
+  no-confusing-arrow: off
+  no-console: off
+  no-mixed-operators: off
+  no-param-reassign: off
+  no-plusplus: off
+  no-restricted-syntax: off
+  no-shadow: off
+  no-tabs: ["error", { allowIndentationTabs: true }]
+  no-underscore-dangle: off
+  no-use-before-define: off

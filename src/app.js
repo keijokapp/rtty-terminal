@@ -1,13 +1,13 @@
-import audioCtx from './audioContext';
-import { AFSKDekeyer, AFSKKeyer } from './afsk';
-import { UARTReceiver, UARTTransmitter } from './uart';
-import { analyser } from './visualisation';
+import audioCtx from './audioContext.js';
+import { AFSKDekeyer, AFSKKeyer } from './afsk.js';
+import { UARTReceiver, UARTTransmitter } from './uart.js';
+import { analyser } from './visualisation.js';
 
 // Microphone input node
-var source;
+let source;
 
 const bitSize = 60 / 60 / 11; // in seconds
-const samplesPerBit = parseInt(audioCtx.sampleRate * bitSize / 2) * 2;
+const samplesPerBit = Math.floor(audioCtx.sampleRate * bitSize / 2) * 2;
 
 const afskKeyer = new AFSKKeyer();
 const afskDekeyer = new AFSKDekeyer();
@@ -17,6 +17,7 @@ const uartTransmitter = new UARTTransmitter(afskKeyer, {
 	bitSize: samplesPerBit / audioCtx.sampleRate,
 	stopBits: 2
 });
+// eslint-disable-next-line no-unused-vars
 const uartReceiver = new UARTReceiver(afskDekeyer, {
 	byteSize: 8,
 	parityBits: 1,
@@ -27,11 +28,11 @@ const uartReceiver = new UARTReceiver(afskDekeyer, {
 function startRx() {
 	try {
 		afskKeyer.output.disconnect(analyser);
-	} catch(e) {
+	} catch (e) {
 		// ignored intentionally
 	}
 
-	if(source) {
+	if (source) {
 		source.connect(analyser);
 	} else {
 		console.warn('Source is not available');
@@ -39,10 +40,10 @@ function startRx() {
 }
 
 function startTx() {
-	if(source) {
+	if (source) {
 		try {
 			source.disconnect(analyser);
-		} catch(e) {
+		} catch (e) {
 			// ignored intentionally
 		}
 	} else {
@@ -52,10 +53,9 @@ function startTx() {
 	afskKeyer.output.connect(analyser);
 }
 
-
 const oscillator = audioCtx.createOscillator();
 oscillator.frequency.value = 915;
-oscillator.start()
+oscillator.start();
 
 window.onkeydown = () => {
 	oscillator.frequency.setValueAtTime(1085, 0);
@@ -65,13 +65,12 @@ window.onkeyup = () => {
 	oscillator.frequency.setValueAtTime(915, 0);
 };
 
-
 const noise = audioCtx.createScriptProcessor();
 noise.onaudioprocess = e => {
 	const input = e.inputBuffer.getChannelData(0);
-	const output= e.outputBuffer.getChannelData(0);
-	for(let i = 0; i < input.length; i++) {
-		output[i] = input[i] / 10 + Math.random() - .5;
+	const output = e.outputBuffer.getChannelData(0);
+	for (let i = 0; i < input.length; i++) {
+		output[i] = input[i] / 10 + Math.random() - 0.5;
 	}
 };
 
