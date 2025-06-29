@@ -1,0 +1,52 @@
+<!DOCTYPE html5>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>RTTY decoder</title>
+	<style>
+html, div, body, canvas {
+	padding: 0;
+	border: 0;
+	margin: 0;
+}
+body {
+  font-family: sans-serif;
+}
+
+canvas {
+  background-color: #eee;
+}
+
+canvas {
+	display: inline-block;
+}
+	</style>
+</head>
+<body>
+	<div id="info-container" style="display: none; position: absolute"></div>
+	<div class="canvasContainer">
+		<canvas id="inputSamples" class="full-width"></canvas>
+	</div>
+	<div class="canvasContainer">
+		<canvas id="inputFft" class="full-width"></canvas>
+	</div>
+	<div class="canvasContainer">
+		<canvas id="inputTone-0" width="200" height="200"></canvas>
+		<canvas id="inputTone-1" width="200" height="200"></canvas>
+		<canvas id="inputTone-2" width="200" height="200"></canvas>
+		<canvas id="inputTone-3" width="200" height="200"></canvas>
+		<canvas id="inputTone-4" width="200" height="200"></canvas>
+		<canvas id="inputTone-5" width="200" height="200"></canvas>
+		<canvas id="inputTone-6" width="200" height="200"></canvas>
+		<canvas id="inputTone-7" width="200" height="200"></canvas>
+		<canvas id="inputTone-8" width="200" height="200"></canvas>
+	</div>
+	<div class="canvasContainer">
+		<canvas id="filters-0" class="full-width"></canvas>
+		<canvas id="filters-1" class="full-width"></canvas>
+		<canvas id="filters-2" class="full-width"></canvas>
+		<canvas id="filters-3" class="full-width"></canvas>
+	</div>
+	<script type="module" src="app.js"></script>
+</body>
+</html>
