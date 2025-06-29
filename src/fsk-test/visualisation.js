@@ -1,6 +1,102 @@
+import React, { useRef } from 'react';
+import { flushSync } from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import { windowSize, markWaveLength, spaceWaveLength } from './parameters.js';
 import input, { getPhase } from './input.js';
 import fft from './fft.js';
+
+function Content() {
+	const infoContainerRef = useRef();
+
+	function onInfo(event) {
+		const infoContainer = infoContainerRef.current;
+
+		if (event == null) {
+			infoContainer.style.display = 'none';
+			infoContainer.graph = {};
+		} else {
+			infoContainer.style.top = event.clientY + 28;
+			infoContainer.style.left = event.clientX;
+			infoContainer.graph = {
+				graph: event.target.id,
+				x: event.nativeEvent.offsetX / event.target.clientWidth,
+				y: event.nativeEvent.offsetY / event.target.clientHeight
+			};
+		}
+	}
+
+	return (
+		React.createElement(React.Fragment, {}, [
+			React.createElement('div', { id: 'info-container', ref: infoContainerRef, style: { display: 'none', position: 'absolute' } }),
+			React.createElement('div', { className: 'canvasContainer' }, [
+				React.createElement(Canvas, { fullWidth: true, id: 'inputSamples', onInfo })
+			]),
+			React.createElement('div', { className: 'canvasContainer' }, [
+				React.createElement(Canvas, { id: 'inputFft', fullWidth: true, onInfo })
+			]),
+			React.createElement('div', { className: 'canvasContainer' }, [
+				React.createElement(Canvas, {
+					id: 'inputTone-0', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-1', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-2', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-3', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-4', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-5', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-6', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-7', height: 200, onInfo, width: 200
+				}),
+				' ',
+				React.createElement(Canvas, {
+					id: 'inputTone-8', height: 200, onInfo, width: 200
+				})
+			]),
+			React.createElement('div', { className: 'canvasContainer' }, [
+				React.createElement(Canvas, { fullWidth: true, id: 'filters-0', onInfo }),
+				React.createElement(Canvas, { fullWidth: true, id: 'filters-1', onInfo }),
+				React.createElement(Canvas, { fullWidth: true, id: 'filters-2', onInfo }),
+				React.createElement(Canvas, { fullWidth: true, id: 'filters-3', onInfo })
+			])
+		])
+	);
+}
+
+function Canvas({
+	fullWidth, height, id, onInfo, width
+}) {
+	return React.createElement('canvas', {
+		className: fullWidth ? 'full-width' : undefined,
+		height,
+		id,
+		onMouseMove: onInfo,
+		onMouseOut() { onInfo(); },
+		width
+	});
+}
+
+flushSync(() => {
+	ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Content));
+});
 
 const inputSamplesCanvas = document.getElementById('inputSamples');
 const inputSamplesCtx = inputSamplesCanvas.getContext('2d');
@@ -8,25 +104,6 @@ const inputFftCanvas = document.getElementById('inputFft');
 const inputFftCtx = inputFftCanvas.getContext('2d');
 const infoContainer = document.getElementById('info-container');
 infoContainer.graph = {};
-
-for (const canvas of document.querySelectorAll('canvas')) {
-	canvas.addEventListener('mousemove', ({
-		target, clientX, clientY, offsetX, offsetY
-	}) => {
-		infoContainer.style.top = clientY + 28;
-		infoContainer.style.left = clientX;
-		infoContainer.graph = {
-			graph: target.id,
-			x: offsetX / target.clientWidth,
-			y: offsetY / target.clientHeight
-		};
-	});
-
-	canvas.addEventListener('mouseout', () => {
-		infoContainer.style.display = 'none';
-		infoContainer.graph = {};
-	});
-}
 
 requestAnimationFrame(draw);
 
@@ -86,19 +163,10 @@ function drawInput(inputSamples) {
 function drawFft(inputSamples) {
 	const [inputFftR, inputFftI] = fft(inputSamples);
 
-	const canvasWidth = inputFftCanvas.width; const
-		canvasHeight = inputFftCanvas.height;
+	const canvasWidth = inputFftCanvas.width;
+	const canvasHeight = inputFftCanvas.height;
 	inputFftCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-	/* inputFftCtx.strokeStyle = 'gray';
-	inputFftCtx.beginPath();
-	inputFftCtx.moveTo(0, canvasHeight);
-	for(let x = 0; x < windowSize; x++) {
-		inputFftCtx.lineTo(
-			x * canvasWidth / windowSize,
-			canvasHeight - Math.sqrt(inputFftI[x] * inputFftI[x] + inputFftR[x] * inputFftR[x])
-		);
-	}
-	inputFftCtx.stroke(); */
+
 	inputFftCtx.strokeStyle = 'blue';
 	inputFftCtx.beginPath();
 	inputFftCtx.moveTo(0, canvasHeight / 2);

@@ -8,6 +8,7 @@ export default [
 			globals: globals.browser
 		},
 		rules: {
+			'import/no-unresolved': ['error', { ignore: ['^react$', '^react-dom$', '^react-dom/client$'] }],
 			'no-underscore-dangle': 'off',
 			'no-bitwise': 'off',
 			'no-console': 'off'
