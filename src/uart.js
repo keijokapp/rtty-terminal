@@ -52,6 +52,7 @@ export class UARTTransmitter {
 			} else {
 				bits.push({ timestamp: time, value: -1 }); // space, low
 			}
+
 			time += this._bitSize;
 			byte >>= 1;
 		}
@@ -63,6 +64,7 @@ export class UARTTransmitter {
 			} else {
 				bits.push({ timestamp: time, value: -1 }); // space, low
 			}
+
 			time += this._bitSize;
 			parity >>= 1;
 		}
@@ -123,6 +125,7 @@ export class UARTReceiver extends EventEmitter {
 			if (value === 1) { // Got high value
 				this._state = States.WAIT_START;
 			}
+
 			break;
 		case States.WAIT_START:
 			if (value === -1) { // Got start bit
@@ -133,6 +136,7 @@ export class UARTReceiver extends EventEmitter {
 				console.log('Reverted to waiting high value');
 				this._state = States.WAIT_HIGH;
 			}
+
 			break;
 		}
 	}
@@ -153,13 +157,16 @@ export class UARTReceiver extends EventEmitter {
 			if (error) {
 				return;
 			}
+
 			if (value === 0) {
 				error = true;
 				console.log('ERROR: Got zero value');
+
 				return;
 			}
 
 			value = value === 1 ? 1 : 0;
+
 			if (value && bitIndex > 0 && bitIndex <= this._byteSize) {
 				parity++;
 			}
@@ -172,11 +179,13 @@ export class UARTReceiver extends EventEmitter {
 				} else {
 					console.log('Start and stop bits NOT OK');
 				}
+
 				if ((byteValue & parityMask) >> (this._byteSize + 1) === (parity & maxParity)) {
 					console.log('Parity bits OK');
 				} else {
 					console.log('Parity bits NOT OK: parity bit: %d; byte parity: %d', (byteValue & parityMask) >> (this._byteSize + 1), parity);
 				}
+
 				byteValue >>= 1;
 				byteValue &= (1 << this._byteSize) - 1;
 
@@ -219,17 +228,21 @@ function draw() {
 	ctx.clearRect(0, 0, e.width, e.height);
 
 	ctx.beginPath();
+
 	for (let i = 0; i < e.width; i++) {
 		const timeScale = time + period * i / e.width;
+
 		while (nextChange && nextChange.time <= timeScale) {
 			currentValue = nextChange.value;
 			nextChange = changes[changeIndex++];
 		}
+
 		if (currentValue) {
 			ctx.moveTo(i, e.height / 2);
 			ctx.lineTo(i, currentValue > 0 ? 0 : e.height);
 		}
 	}
+
 	ctx.stroke();
 
 	if (changes[0]) {
@@ -242,11 +255,13 @@ function draw() {
 
 		ctx.strokeStyle = 'red';
 		ctx.beginPath();
+
 		for (const sampling of samplings) {
 			const x = e.width * (sampling.sample - firstSample) / totalSamples;
 			ctx.moveTo(x, 0);
 			ctx.lineTo(x, e.height);
 		}
+
 		ctx.stroke();
 
 		while (samplings[0] && samplings[0].sample < firstSample) {

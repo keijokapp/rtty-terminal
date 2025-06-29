@@ -17,6 +17,7 @@ const uartTransmitter = new UARTTransmitter(afskKeyer, {
 	bitSize: samplesPerBit / audioCtx.sampleRate,
 	stopBits: 2
 });
+
 // eslint-disable-next-line no-unused-vars
 const uartReceiver = new UARTReceiver(afskDekeyer, {
 	byteSize: 8,
@@ -28,7 +29,7 @@ const uartReceiver = new UARTReceiver(afskDekeyer, {
 function startRx() {
 	try {
 		afskKeyer.output.disconnect(analyser);
-	} catch (e) {
+	} catch {
 		// ignored intentionally
 	}
 
@@ -43,7 +44,7 @@ function startTx() {
 	if (source) {
 		try {
 			source.disconnect(analyser);
-		} catch (e) {
+		} catch {
 			// ignored intentionally
 		}
 	} else {
@@ -66,9 +67,11 @@ window.onkeyup = () => {
 };
 
 const noise = audioCtx.createScriptProcessor();
+
 noise.onaudioprocess = e => {
 	const input = e.inputBuffer.getChannelData(0);
 	const output = e.outputBuffer.getChannelData(0);
+
 	for (let i = 0; i < input.length; i++) {
 		output[i] = input[i] / 10 + Math.random() - 0.5;
 	}

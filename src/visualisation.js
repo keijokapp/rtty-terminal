@@ -42,9 +42,11 @@ function draw() {
 	const xCoefficient = inputCanvas.width / fftLength;
 	const yCoefficient = inputCanvas.height / 256;
 	inputCtx.beginPath();
+
 	for (let i = 0; i < fftLength; i++) {
 		inputCtx.lineTo(i * xCoefficient, inputCanvas.height - fftArray[i] * yCoefficient);
 	}
+
 	inputCtx.stroke();
 
 	const timeOffset = (performance.now() - waterfallStartTime) % (2 * config.waterfallPeriod);
@@ -56,9 +58,15 @@ function draw() {
 
 	let min = Infinity; let
 		max = -Infinity;
+
 	for (const bin of fftArray) {
-		if (bin < min) min = bin;
-		if (bin > max) max = bin;
+		if (bin < min) {
+			min = bin;
+		}
+
+		if (bin > max) {
+			max = bin;
+		}
 	}
 
 	const delta = max - min;
