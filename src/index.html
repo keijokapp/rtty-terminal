@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<title>RTTY decoder</title>
 	<style>
-html, div, body {
+html, div, body, canvas {
 	padding: 0;
 	border: 0;
 	margin: 0;
@@ -23,32 +23,16 @@ canvas {
 	</style>
 </head>
 <body>
-	<div class="canvasContainer">
-		<canvas id="input" class="full-width"></canvas>
-	</div>
-	<div class="canvasContainer" style="position: relative; overflow: hidden; height: 128px">
-		<canvas id="waterfall1" class="full-width" style="position: absolute; left: 0"></canvas>
-		<canvas id="waterfall2" class="full-width" style="position: absolute; left: 0	"></canvas>
-	</div>
-	<div class="canvasContainer">
-		<canvas id="mark-filter" class="full-width"></canvas>
-		<canvas id="space-filter" class="full-width"></canvas>
-	</div>
-	<div class="canvasContainer">
-		<canvas id="fsk-samples" class="full-width"></canvas>
-		<canvas id="fsk-input" class="full-width"></canvas>
-	</div>
-
-	<div>
-		<form id="conf">
-			cFrq: <input type="number" id="cfrq" style="width: 60px" value="2125" /> shift: <input type="number" id="shift" style="width: 60px" value="170" />
-		</form>
-	</div>
-	<div>
-		<textarea id="result" rows="13"></textarea>
-	</div>
-	<div>
-<textarea id="message"></textarea>
-	</div>
+	<div id="root"></div>
+	<script type="importmap">
+		{
+			"imports": {
+				"react": "https://esm.sh/react@19.1.0",
+				"react-dom": "https://esm.sh/react-dom@19.1.0",
+				"react-dom/client": "https://esm.sh/react-dom@19.1.0/client"
+			}
+		}
+	</script>
+	<script type="module" src="app.js"></script>
 </body>
 </html>

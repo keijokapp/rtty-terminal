@@ -1,107 +1,67 @@
-import audioCtx from './audioContext.js';
-import { AFSKDekeyer, AFSKKeyer } from './afsk.js';
-import { UARTReceiver, UARTTransmitter } from './uart.js';
-import { analyser } from './visualisation.js';
+import './visualisation.js';
+import './afsk.js';
+import { markWaveLength } from './parameters.js';
+import {
+	setNoisePower, setPhase, setSignalPower, setWaveLength
+} from './input.js';
 
-// Microphone input node
-let source;
+function resize() {
+	const width = document.body.clientWidth;
 
-const bitSize = 60 / 60 / 11; // in seconds
-const samplesPerBit = Math.floor(audioCtx.sampleRate * bitSize / 2) * 2;
-
-const afskKeyer = new AFSKKeyer();
-const afskDekeyer = new AFSKDekeyer();
-const uartTransmitter = new UARTTransmitter(afskKeyer, {
-	byteSize: 8,
-	parityBits: 1,
-	bitSize: samplesPerBit / audioCtx.sampleRate,
-	stopBits: 2
-});
-
-// eslint-disable-next-line no-unused-vars
-const uartReceiver = new UARTReceiver(afskDekeyer, {
-	byteSize: 8,
-	parityBits: 1,
-	bitSize: samplesPerBit,
-	stopBits: 2
-});
-
-function startRx() {
-	try {
-		afskKeyer.output.disconnect(analyser);
-	} catch {
-		// ignored intentionally
-	}
-
-	if (source) {
-		source.connect(analyser);
-	} else {
-		console.warn('Source is not available');
+	for (const canvas of document.querySelectorAll('.canvasContainer > canvas.full-width')) {
+		canvas.width = width;
+		canvas.height = 128;
 	}
 }
 
-function startTx() {
-	if (source) {
-		try {
-			source.disconnect(analyser);
-		} catch {
-			// ignored intentionally
-		}
-	} else {
-		console.warn('Source is not available');
+window.addEventListener('resize', resize);
+resize();
+
+let waveLength = markWaveLength; let phase = 0; let sPower = 10; let
+	nPower = 0;
+
+window.onkeydown = e => {
+	if (e.key === 'ArrowLeft') {
+		e.preventDefault();
+		phase = setPhase(phase + (e.ctrlKey ? 50 : 1));
 	}
 
-	afskKeyer.output.connect(analyser);
-}
-
-const oscillator = audioCtx.createOscillator();
-oscillator.frequency.value = 915;
-oscillator.start();
-
-window.onkeydown = () => {
-	oscillator.frequency.setValueAtTime(1085, 0);
-};
-
-window.onkeyup = () => {
-	oscillator.frequency.setValueAtTime(915, 0);
-};
-
-const noise = audioCtx.createScriptProcessor();
-
-noise.onaudioprocess = e => {
-	const input = e.inputBuffer.getChannelData(0);
-	const output = e.outputBuffer.getChannelData(0);
-
-	for (let i = 0; i < input.length; i++) {
-		output[i] = input[i] / 10 + Math.random() - 0.5;
+	if (e.key === 'ArrowRight') {
+		e.preventDefault();
+		phase = setPhase(phase - (e.ctrlKey ? 50 : 1));
 	}
+
+	if (e.key === 'ArrowUp') {
+		e.preventDefault();
+		waveLength = setWaveLength(waveLength + (e.ctrlKey ? 50 : 1));
+	}
+
+	if (e.key === 'ArrowDown') {
+		e.preventDefault();
+		waveLength = setWaveLength(waveLength - (e.ctrlKey ? 50 : 1));
+	}
+
+	if (e.key === 'p') {
+		e.preventDefault();
+		sPower = setSignalPower((sPower + 1) / 10) * 10;
+	}
+
+	if (e.key === 'P') {
+		e.preventDefault();
+		sPower = setSignalPower((sPower - 1) / 10) * 10;
+	}
+
+	if (e.key === 'n') {
+		e.preventDefault();
+		nPower = setNoisePower((nPower + 1) / 10) * 10;
+	}
+
+	if (e.key === 'N') {
+		e.preventDefault();
+		nPower = setNoisePower((nPower - 1) / 10) * 10;
+	}
+
+	console.log('Wave length: %f\tPhase: %f\tSignal power: %f\tNoise power: %f', waveLength, phase, sPower, nPower);
 };
 
-source = oscillator.connect(noise);
-noise.connect(audioCtx.destination);
-afskDekeyer.setSource(noise);
-startRx();
-
-window.startRx = startRx;
-window.startTx = startTx;
-window.audioCtx = audioCtx;
-window.send = v => uartTransmitter.send(v);
-
-/*
-navigator.mediaDevices.getUserMedia({
-	audio: {
-		echoCancellation: false,
-		noiseSuppression: false,
-		autoGainControl: false
-	}
-}).then(media => {
-	const mediaSource = audioCtx.createMediaStreamSource(media);
-	mediaSource.connect(noise);
-	source = noise;
-	afskDekeyer.setSource(noise);
-	startRx();
-}).catch(e => {
-	console.warn(e);
-});
-
-*/
+setWaveLength(waveLength);
