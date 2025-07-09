@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 import { windowSize, markWaveLength, spaceWaveLength } from './parameters.js';
 import input, { getPhase } from './input.js';
 import fft from './fft.js';
+import useAnimationFrame from './hooks/useAnimationFrame.js';
 
 function Content() {
 	const infoContainerRef = useRef();
@@ -29,7 +30,7 @@ function Content() {
 		React.createElement(React.Fragment, {}, [
 			React.createElement('div', { id: 'info-container', ref: infoContainerRef, style: { display: 'none', position: 'absolute' } }),
 			React.createElement('div', { className: 'canvasContainer' }, [
-				React.createElement(Canvas, { fullWidth: true, id: 'inputSamples', onInfo })
+				React.createElement(InputCanvas, { onInfo })
 			]),
 			React.createElement('div', { className: 'canvasContainer' }, [
 				React.createElement(Canvas, { id: 'inputFft', fullWidth: true, onInfo })
@@ -81,8 +82,24 @@ function Content() {
 	);
 }
 
+function InputCanvas({ onInfo }) {
+	const canvasRef = useRef();
+
+	useAnimationFrame(useCallback(() => {
+		console.log(canvasRef);
+		drawInput(canvasRef.current, input());
+	}, []));
+
+	return React.createElement(Canvas, {
+		fullWidth: true,
+		id: 'inputSamples',
+		onInfo,
+		ref: canvasRef
+	});
+}
+
 function Canvas({
-	fullWidth, height, id, onInfo, width
+	fullWidth, height, id, onInfo, ref, width
 }) {
 	return React.createElement('canvas', {
 		className: fullWidth ? 'full-width' : undefined,
@@ -90,6 +107,7 @@ function Canvas({
 		id,
 		onMouseMove: onInfo,
 		onMouseOut() { onInfo(); },
+		ref,
 		width
 	});
 }
@@ -112,7 +130,7 @@ function draw() {
 
 	const inputSamples = input();
 
-	drawInput(inputSamples);
+	// drawInput(inputSamples);
 	drawFft(inputSamples);
 
 	drawTone(0, inputSamples, markWaveLength);
@@ -123,9 +141,11 @@ function draw() {
 	drawTone(4, inputSamples, windowSize);
 }
 
-function drawInput(inputSamples) {
-	const canvasWidth = inputSamplesCanvas.width; const
-		canvasHeight = inputSamplesCanvas.height;
+function drawInput(inputSamplesCanvas, inputSamples) {
+	const canvasWidth = inputSamplesCanvas.width;
+	const canvasHeight = inputSamplesCanvas.height;
+	const inputSamplesCtx = inputSamplesCanvas.getContext('2d');
+
 	inputSamplesCtx.clearRect(0, 0, canvasWidth, canvasHeight);
 
 	inputSamplesCtx.strokeStyle = 'gray';
